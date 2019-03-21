@@ -1,26 +1,17 @@
 package com.example.eqdemoandroid;
 
 import android.Manifest;
-import android.content.BroadcastReceiver;
-import android.content.ContentResolver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
-import android.net.Uri;
 import android.os.Bundle;
-import android.provider.MediaStore.Audio.Media;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.CompoundButton;
 import android.widget.Switch;
-import android.widget.Toast;
+
+import java.util.Arrays;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -45,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
         switcher = findViewById(R.id.switcher);
         equalizer = new Equalizer(Integer.MAX_VALUE, 0);
+        bassBoost = new BassBoost(Integer.MAX_VALUE, 0);
+
         final short numberOfBands = equalizer.getNumberOfBands();
         Log.i(TAG, "Supported number of bands: " + numberOfBands);
         setUpEqualizerPreset();
@@ -53,6 +46,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 equalizer.setEnabled(isChecked);
+                bassBoost.setEnabled(isChecked);
             }
         });
     }
@@ -62,8 +56,13 @@ public class MainActivity extends AppCompatActivity {
         settings.bandLevels = new short[equalizer.getNumberOfBands()];
         settings.numBands = equalizer.getNumberOfBands();
 
+        short[] bandLevelRange = equalizer.getBandLevelRange();
+        Log.d(TAG, "Level range - " + Arrays.toString(bandLevelRange));
+
+        bassBoost.setStrength((short) 1000);
+
         for (int i = 0; i < equalizer.getNumberOfBands(); i++) {
-            settings.bandLevels[i] = (short) 4;
+            settings.bandLevels[i] = bandLevelRange[0];
         }
 
         try {

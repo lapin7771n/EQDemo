@@ -1,6 +1,7 @@
 package com.example.eqdemoandroid;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
@@ -23,6 +24,8 @@ public class MainActivity extends AppCompatActivity {
     private Equalizer equalizer;
     private BassBoost bassBoost;
 
+    private short[] bandLevelRange;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -35,18 +38,29 @@ public class MainActivity extends AppCompatActivity {
         }
 
         switcher = findViewById(R.id.switcher);
+
+        Intent intent = getIntent();
+        boolean booleanExtra = intent.getBooleanExtra(EQService.IS_EQ_ON, false);
+        Log.d(TAG, "From notification - " + booleanExtra);
+        switcher.setChecked(true);
+
         equalizer = new Equalizer(Integer.MAX_VALUE, 0);
         bassBoost = new BassBoost(Integer.MAX_VALUE, 0);
 
+        bandLevelRange = equalizer.getBandLevelRange();
+
         final short numberOfBands = equalizer.getNumberOfBands();
         Log.i(TAG, "Supported number of bands: " + numberOfBands);
-        setUpEqualizerPreset();
+        //setUpEqualizerPreset();
 
         switcher.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                equalizer.setEnabled(isChecked);
-                bassBoost.setEnabled(isChecked);
+                if (isChecked) {
+                    startEqualizerService();
+                } else {
+                    stopService(new Intent(MainActivity.this, EQService.class));
+                }
             }
         });
     }
@@ -56,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
         settings.bandLevels = new short[equalizer.getNumberOfBands()];
         settings.numBands = equalizer.getNumberOfBands();
 
-        short[] bandLevelRange = equalizer.getBandLevelRange();
         Log.d(TAG, "Level range - " + Arrays.toString(bandLevelRange));
 
         bassBoost.setStrength((short) 1000);
@@ -74,5 +87,20 @@ public class MainActivity extends AppCompatActivity {
         } catch (UnsupportedOperationException e) {
             e.printStackTrace();
         }
+    }
+
+    private void startEqualizerService() {
+        Intent intent = new Intent(this, EQService.class);
+
+        short numberOfBands = equalizer.getNumberOfBands();
+        short[] bandsLevels = new short[numberOfBands];
+
+        for (int i = 0; i < bandsLevels.length; i++) {
+            bandsLevels[i] = bandLevelRange[1];
+        }
+
+        intent.putExtra(EQService.EQUALIZER_KEY, bandsLevels);
+
+        ContextCompat.startForegroundService(this, intent);
     }
 }

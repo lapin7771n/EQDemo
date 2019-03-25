@@ -19,7 +19,8 @@
             android:name=".EQService"
             android:enabled="true"
             android:exported="true"
-            android:process=":ServiceProcess"/>
+            android:directBootAware="true"
+            android:process=":ServiceProcess" />
 
         <activity
             android:name=".MainActivity"

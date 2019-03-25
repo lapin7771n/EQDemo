@@ -6,11 +6,13 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.audiofx.BassBoost;
 import android.media.audiofx.Equalizer;
+import android.media.audiofx.Visualizer;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import java.util.Arrays;
+
+import androidx.core.app.NotificationCompat;
 
 import static com.example.eqdemoandroid.EQApplication.CHANNEL_ID;
 
@@ -22,16 +24,11 @@ public class EQService extends Service {
 
     private static final String TAG = "EQService";
 
-    private static Equalizer equalizer;
-    private static BassBoost bassBoost;
-
-
-    public EQService() {
-    }
+    private Equalizer equalizer;
+    private BassBoost bassBoost;
 
     @Override
     public IBinder onBind(Intent intent) {
-        // TODO: Return the communication channel to the service.
         throw new UnsupportedOperationException("Not yet implemented");
     }
 
@@ -45,12 +42,11 @@ public class EQService extends Service {
     public int onStartCommand(final Intent intent, int flags, int startId) {
 
         short[] equalizerBandLevels = intent.getShortArrayExtra(EQUALIZER_KEY);
-        Log.d(TAG, "Retrieved  equalizer settings - " + Arrays.toString(equalizerBandLevels));
+        int bassStrength = intent.getIntExtra(BASS_KEY, 0);
 
         Intent notificationIntent = new Intent(EQService.this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent
                 .getActivity(EQService.this, 0, notificationIntent, 0);
-        notificationIntent.putExtra(IS_EQ_ON, true);
 
         Notification notification = new NotificationCompat.Builder(EQService.this, CHANNEL_ID)
                 .setContentText("EQNotif")
@@ -62,17 +58,14 @@ public class EQService extends Service {
         startForeground(1, notification);
 
         equalizer = new Equalizer(Integer.MAX_VALUE, 0);
-        Equalizer.Settings equalizerSettings = new Equalizer.Settings();
-
-        equalizerSettings.bandLevels = equalizerBandLevels;
-        equalizerSettings.numBands = equalizer.getNumberOfBands();
+        for (int i = 0; i < equalizerBandLevels.length; i++) {
+            equalizer.setBandLevel((short) i, equalizerBandLevels[i]);
+        }
+        equalizer.setEnabled(true);
 
         bassBoost = new BassBoost(Integer.MAX_VALUE, 0);
-        bassBoost.setStrength((short) 1000);
+        bassBoost.setStrength((short) bassStrength);
         bassBoost.setEnabled(true);
-//        equalizerSettings.curPreset = 2;
-
-        equalizer.setEnabled(true);
 
         return Service.START_STICKY;
     }
